@@ -1,0 +1,7 @@
+9f26693427de86b60d12b9dd073212489b81fe42		branch 'bitvector4-shift' of https://github.com/prysmaticlabs/go-bitfield
+3ee576f0d9ce6ecf06ad75b9b602d755742cd381		branch 'count' of https://github.com/prysmaticlabs/go-bitfield
+3ea32b174600d7c1abcebc151c236f000d1f96c0		branch 'fix' of https://github.com/prysmaticlabs/go-bitfield
+62c2aee7166951c456888f92237aee4303ba1b9d		branch 'master' of https://github.com/prysmaticlabs/go-bitfield
+8ef7b35d7104f7351545fd8954cab7aaec558fe5		branch 'renovate/bazel_gazelle-0.x' of https://github.com/prysmaticlabs/go-bitfield
+e43f6a0a927b5bfd39c0aa8766d7e5704d25de89		branch 'renovate/io_bazel_rules_go-0.x' of https://github.com/prysmaticlabs/go-bitfield
+d2859ca5b9187125ce7f3694a4f7e18564724217		branch 'shift' of https://github.com/prysmaticlabs/go-bitfield
