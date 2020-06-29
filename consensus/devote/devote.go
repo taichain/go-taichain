@@ -56,7 +56,6 @@ const (
 var (
 	etherzeroBlockReward = big.NewInt(0.3375e+18) // Block reward in wei to masternode account when successfully mining a block
 	rewardToCommunity    = big.NewInt(0.1125e+18) // Block reward in wei to community account when successfully mining a block
-	rewardToSharding     = "12000000000000000000" // Block reward in wei to Masternode Sharding account when successfully mining a block
 
 	timeOfFirstBlock   = uint64(0)
 	confirmedBlockHead = []byte("confirmed-block-head")
@@ -281,13 +280,6 @@ func AccumulateRewards(govAddress common.Address, state *state.StateDB, header *
 	//  Accumulate the rewards to community account
 	rewardForCommunity := new(big.Int).Set(rewardToCommunity)
 	state.AddBalance(govAddress, rewardForCommunity, header.Number)
-
-	if isForked(params.PreShardingBlockNumber, header.Number) {
-		//  Accumulate the rewards to pre-sharding account
-		reward = new(big.Int)
-		reward, _ = reward.SetString(rewardToSharding, 10)
-		state.AddBalance(params.ShardingAddress, reward, header.Number)
-	}
 }
 
 // isForked returns whether a fork scheduled at block s is active at the given head block.

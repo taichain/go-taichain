@@ -279,9 +279,6 @@ func (snap *Snapshot) lookup(now uint64, header *types.Header) (witness string, 
 		cycle  uint64
 		period = params.Period
 	)
-	if isForked(params.Pre2ShardingBlockNumber, header.Number) {
-		period = params.Period1Second
-	}
 	offset := now % params.Epoch
 	if offset%period != 0 {
 		err = ErrInvalidMinerBlockTime
