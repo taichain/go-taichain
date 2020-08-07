@@ -1,18 +1,18 @@
-// Copyright 2018 The go-etherzero Authors
-// This file is part of the go-etherzero library.
+// Copyright 2018 The The go-taichain Authors
+// This file is part of The go-taichain library.
 //
-// The go-etherzero library is free software: you can redistribute it and/or modify
+// The go-taichain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-etherzero library is distributed in the hope that it will be useful,
+// The go-taichain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-etherzero library. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package devote implements the proof-of-stake consensus engine.
 
@@ -40,13 +40,13 @@ import (
 
 type Snapshot struct {
 	devoteDB *devotedb.DevoteDB
-	config   *params.DevoteConfig // Consensus engine parameters to fine tune behavior
-	sigcache *lru.ARCCache        // Cache of recent block signatures to speed up ecrecover
-	Hash     common.Hash          //Block hash where the snapshot was created
-	Number   uint64               //Cycle number where the snapshot was created
-	Cycle    uint64               //Cycle number where the snapshot was created
-	Signers  map[string]struct{}  `json:"signers"` // Set of authorized signers at this moment
-	Recents  map[uint64]string    // set of recent masternodes for spam protections
+	config   *params.DevoteConfig                 // Consensus engine parameters to fine tune behavior
+	sigcache *lru.ARCCache                        // Cache of recent block signatures to speed up ecrecover
+	Hash     common.Hash                          //Block hash where the snapshot was created
+	Number   uint64                               //Cycle number where the snapshot was created
+	Cycle    uint64                               //Cycle number where the snapshot was created
+	Signers  map[string]struct{} `json:"signers"` // Set of authorized signers at this moment
+	Recents  map[uint64]string                    // set of recent masternodes for spam protections
 
 	TimeStamp uint64
 	mu        sync.Mutex
@@ -73,10 +73,10 @@ func newSnapshot(config *params.DevoteConfig, db *devotedb.DevoteDB) *Snapshot {
 // copy creates a deep copy of the snapshot, though not the individual votes.
 func (s *Snapshot) copy() *Snapshot {
 	cpy := &Snapshot{
-		Number:  s.Number,
-		Hash:    s.Hash,
-		Signers: make(map[string]struct{}),
-		Recents: make(map[uint64]string),
+		Number:   s.Number,
+		Hash:     s.Hash,
+		Signers:  make(map[string]struct{}),
+		Recents:  make(map[uint64]string),
 	}
 	for signer := range s.Signers {
 		cpy.Signers[signer] = struct{}{}
@@ -274,17 +274,17 @@ func (snap *Snapshot) uncastImproved(cycle uint64, nodes []string, safeSize int)
 	return result, nil
 }
 
-func (snap *Snapshot) lookup(now uint64, header *types.Header) (witness string, err error) {
+func (snap *Snapshot) lookup(now uint64) (witness string, err error) {
+
 	var (
-		cycle  uint64
-		period = params.Period
+		cycle uint64
 	)
 	offset := now % params.Epoch
-	if offset%period != 0 {
+	if offset%params.Period != 0 {
 		err = ErrInvalidMinerBlockTime
 		return
 	}
-	offset /= period
+	offset /= params.Period
 	cycle = snap.devoteDB.GetCycle()
 	witnesses, err := snap.devoteDB.GetWitnesses(cycle)
 	if err != nil {

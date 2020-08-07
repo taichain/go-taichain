@@ -1,18 +1,18 @@
-// Copyright 2018 The go-etherzero Authors
-// This file is part of the go-etherzero library.
+// Copyright 2018 The The go-taichain Authors
+// This file is part of The go-taichain library.
 //
-// The go-etherzero library is free software: you can redistribute it and/or modify
+// The go-taichain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-etherzero library is distributed in the hope that it will be useful,
+// The go-taichain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-etherzero library. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain library. If not, see <http://www.gnu.org/licenses/>.
 package main
 
 import (
@@ -43,7 +43,7 @@ var (
 //It also provides a documentation on the steps needed by frontends
 //to use the simulations
 func TestOverlaySim(t *testing.T) {
-	t.Skip("Test is flaky, see: https://github.com/ethersphere/go-etherzero/issues/592")
+	t.Skip("Test is flaky, see: https://github.com/ethersphere/The go-taichain/issues/592")
 	//start the simulation
 	log.Info("Start simulation backend")
 	//get the simulation networ; needed to subscribe for up events

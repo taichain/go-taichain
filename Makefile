@@ -13,11 +13,6 @@ GO ?= latest
 
 geth:
 	build/env.sh go run build/ci.go install ./cmd/geth
-ifeq ($(BRANCH), $(DEFAULTBRANCH))
-		cp ./init.data.0 $(GOBIN)/init.data.0
-		cp ./init.data.1 $(GOBIN)/init.data.1
-		cp ./init.data.2 $(GOBIN)/init.data.2
-endif
 
 swarm:
 	build/env.sh go run build/ci.go install ./cmd/swarm

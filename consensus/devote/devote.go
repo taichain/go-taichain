@@ -1,18 +1,18 @@
-// Copyright 2018 The go-etherzero Authors
-// This file is part of the go-etherzero library.
+// Copyright 2018 The The go-taichain Authors
+// This file is part of The go-taichain library.
 //
-// The go-etherzero library is free software: you can redistribute it and/or modify
+// The go-taichain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-etherzero library is distributed in the hope that it will be useful,
+// The go-taichain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-etherzero library. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package devote implements the proof-of-stake consensus engine.
 package devote
@@ -54,12 +54,24 @@ const (
 )
 
 var (
-	etherzeroBlockReward = big.NewInt(0.3375e+18) // Block reward in wei to masternode account when successfully mining a block
+	TITprotocolBlockReward = big.NewInt(0.3375e+18) // Block reward in wei to masternode account when successfully mining a block
 	rewardToCommunity    = big.NewInt(0.1125e+18) // Block reward in wei to community account when successfully mining a block
 
 	timeOfFirstBlock   = uint64(0)
 	confirmedBlockHead = []byte("confirmed-block-head")
 	uncleHash          = types.CalcUncleHash(nil) // Always Keccak256(RLP([])) as uncles are meaningless outside of PoW.
+	mapRet             = map[int64]*big.Int{
+		// incase int64 overflow
+		0: big.NewInt(3.8589e+9),  // the first year
+		1: big.NewInt(7.6389e+9),  // the second year
+		2: big.NewInt(14.1234e+9), // the third year
+		3: big.NewInt(13.1234e+9), // the forth year
+		4: big.NewInt(10.1663e+9), // the fifth year
+		5: big.NewInt(8.1324e+9),  // the sixth year
+	}
+	baseLastYear    = big.NewInt(8.1324e+9)
+	secondLastYear = big.NewInt(7.6389e+9) // secondLastYear
+	firstLastYear = big.NewInt(3.8589e+9) // firstLastYear
 )
 
 var (
@@ -138,8 +150,9 @@ type Devote struct {
 	config *params.DevoteConfig // Consensus engine configuration parameters
 	db     ethdb.Database       // Database to store and retrieve snapshot checkpoints
 
-	signer     string          // master node nodeid
-	signFn     SignerFn        // signature function
+	signer     string   // master node nodeid
+	signFn     SignerFn // signature function
+	witnesses  []string
 	recents    *lru.ARCCache   // Snapshots for recent block to speed up reorgs
 	signatures *lru.ARCCache   // Signatures of recent blocks to speed up mining
 	proposals  map[string]bool // Current list of proposals we are pushing
@@ -271,9 +284,9 @@ func (d *Devote) Prepare(chain consensus.ChainReader, header *types.Header) erro
 // reward.  The devote consensus allowed uncle block .
 func AccumulateRewards(govAddress common.Address, state *state.StateDB, header *types.Header, uncles []*types.Header) {
 	// Select the correct block reward based on chain progression
-	blockReward := etherzeroBlockReward
-
-	// Accumulate the rewards for the Masternode and any included uncles
+	blockReward := getBlockReward(header)
+	fmt.Println("blockReward is \n", blockReward)
+	// Accumulate the rewards for the masternode and any included uncles
 	reward := new(big.Int).Set(blockReward)
 	state.AddBalance(header.Coinbase, reward, header.Number)
 
@@ -282,12 +295,18 @@ func AccumulateRewards(govAddress common.Address, state *state.StateDB, header *
 	state.AddBalance(govAddress, rewardForCommunity, header.Number)
 }
 
-// isForked returns whether a fork scheduled at block s is active at the given head block.
-func isForked(s, head *big.Int) bool {
-	if s == nil || head == nil {
-		return false
+// 1-->500000---》0.3858
+func getBlockReward(header *types.Header) (*big.Int) {
+	headerNumber := header.Number.Int64()
+	fmt.Println("header.Number is ", header.Number.String())
+	if ((headerNumber >= 0) && (headerNumber < params.BlockCountInEightMonth)) {
+		return new(big.Int).Mul(firstLastYear, big.NewInt(1e8))
+	} else if ((headerNumber >= params.BlockCountInEightMonth) && (headerNumber < params.BlockCountInTwelveMonth)) {
+		return new(big.Int).Mul(secondLastYear, big.NewInt(1e8))
 	}
-	return s.Cmp(head) <= 0
+	// the forth year ,decrease by half
+	return new(big.Int).Mul(baseLastYear, big.NewInt(1e8))
+
 }
 
 // Finalize implements consensus.Engine, accumulating the block and uncle rewards,
@@ -296,7 +315,7 @@ func (d *Devote) Finalize(chain consensus.ChainReader, header *types.Header, sta
 	uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
 	maxWitnessSize := int64(21)
 	safeSize := int(15)
-	if chain.Config().ChainID.Cmp(big.NewInt(90)) != 0 {
+	if chain.Config().ChainID.Cmp(big.NewInt(params.ChainID)) != 0 {
 		maxWitnessSize = 1
 		safeSize = 1
 	}
@@ -314,7 +333,6 @@ func (d *Devote) Finalize(chain consensus.ChainReader, header *types.Header, sta
 	if err != nil {
 		return nil, fmt.Errorf("get current gov address failed from contract, err:%s", err)
 	}
-
 	AccumulateRewards(govaddress, state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	cycle := header.Time / params.Epoch
@@ -353,7 +371,7 @@ func (d *Devote) Author(header *types.Header) (common.Address, error) {
 }
 
 // verifyHeader checks whether a header conforms to the consensus rules of the
-// stock Etherzero devote engine.
+// stock TITprotocol devote engine.
 func (d *Devote) VerifyHeader(chain consensus.ChainReader, header *types.Header, seal bool) error {
 	return d.verifyHeader(chain, header, nil)
 }
@@ -401,6 +419,9 @@ func (d *Devote) verifyHeader(chain consensus.ChainReader, header *types.Header,
 	if parent == nil || parent.Number.Uint64() != number-1 || parent.Hash() != header.ParentHash {
 		return consensus.ErrUnknownAncestor
 	}
+	//if parent.Time+params.Period > header.Time {
+	//	return ErrInvalidTimestamp
+	//}
 	return nil
 }
 
@@ -460,7 +481,7 @@ func (d *Devote) verifySeal(chain consensus.ChainReader, header *types.Header, p
 	snap := newSnapshot(d.config, devoteDB)
 	snap.sigcache = d.signatures
 
-	witness, err := snap.lookup(header.Time, parent)
+	witness, err := snap.lookup(header.Time)
 	if err != nil {
 		return err
 	}
@@ -511,17 +532,28 @@ func (d *Devote) CheckWitness(lastBlock *types.Block, now int64) error {
 	snap := newSnapshot(d.config, devoteDB)
 	snap.sigcache = d.signatures
 
-	witness, err := snap.lookup(uint64(now), lastBlock.Header())
+	witness, err := snap.lookup(uint64(now))
 	if err != nil {
 		return err
 	}
 	log.Info("devote checkWitness lookup", " witness", witness, "signer", d.signer, "cycle", currentCycle, "blockNumber", lastBlock.Number())
-	if (witness == "") || witness != d.signer {
-		return ErrInvalidBlockWitness
+	// === single ===
+	//if (witness == "") || witness != d.signer {
+	//	return ErrInvalidBlockWitness
+	//}
+	//logTime := time.Now().Format("[2006-01-02 15:04:05]")
+	//fmt.Printf("%s [CheckWitness] Found my witness(%s)\n", logTime, witness)
+	//return nil
+	// === multil ===
+	for _, signer := range d.witnesses {
+		if witness == signer {
+			d.signer = signer
+			logTime := time.Now().Format("[2006-01-02 15:04:05]")
+			fmt.Printf("%s [CheckWitness] Found my witness(%s)\n", logTime, witness)
+			return nil
+		}
 	}
-	logTime := time.Now().Format("[2006-01-02 15:04:05]")
-	fmt.Printf("%s [CheckWitness] Found my witness(%s)\n", logTime, witness)
-	return nil
+	return ErrInvalidBlockWitness
 }
 
 // Seal generates a new block for the given input block with the local miner's
@@ -575,13 +607,22 @@ func (d *Devote) CalcDifficulty(chain consensus.ChainReader, time uint64, parent
 	return big.NewInt(1)
 }
 
-func (d *Devote) Authorize(signer string, signFn SignerFn) {
+//func (d *Devote) Authorize(signer string, signFn SignerFn) {
+//	d.mu.Lock()
+//	defer d.mu.Unlock()
+//
+//	d.signer = signer
+//	d.signFn = signFn
+//	log.Info("devote Authorize ", "signer", signer)
+//}
+func (d *Devote) Authorize(witnesses []string, signFn SignerFn) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	d.signer = signer
+	log.Info("devote Authorize ", "signer", len(d.witnesses))
+
+	d.witnesses = witnesses
 	d.signFn = signFn
-	log.Info("devote Authorize ", "signer", signer)
 }
 
 func (d *Devote) Masternodes(masternodeListFn MasternodeListFn) {
@@ -630,7 +671,7 @@ func (d *Devote) updateConfirmedBlockHeader(chain consensus.ChainReader) error {
 	cycle := uint64(0)
 	witnessMap := make(map[string]bool)
 	consensusSize := int(15)
-	if chain.Config().ChainID.Cmp(big.NewInt(90)) != 0 {
+	if chain.Config().ChainID.Cmp(big.NewInt(params.ChainID)) != 0 {
 		consensusSize = 1
 	}
 	for d.confirmedBlockHeader.Hash() != curHeader.Hash() &&

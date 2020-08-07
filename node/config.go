@@ -1,18 +1,18 @@
-// Copyright 2014 The go-etherzero Authors
-// This file is part of the go-etherzero library.
+// Copyright 2014 The The go-taichain Authors
+// This file is part of The go-taichain library.
 //
-// The go-etherzero library is free software: you can redistribute it and/or modify
+// The go-taichain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-etherzero library is distributed in the hope that it will be useful,
+// The go-taichain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-etherzero library. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain library. If not, see <http://www.gnu.org/licenses/>.
 
 package node
 
@@ -35,6 +35,8 @@ import (
 	"github.com/taichain/go-taichain/p2p"
 	"github.com/taichain/go-taichain/p2p/enode"
 	"github.com/taichain/go-taichain/rpc"
+	"github.com/taichain/go-taichain/params"
+	"strconv"
 )
 
 const (
@@ -342,6 +344,32 @@ func (c *Config) NodeKey() *ecdsa.PrivateKey {
 	return key
 }
 
+func (c *Config) MasternodeKeys() []*ecdsa.PrivateKey {
+	privateKeys := make([]*ecdsa.PrivateKey, params.MasternodeKeyCount)
+	instanceDir := filepath.Join(c.DataDir, c.name())
+	if err := os.MkdirAll(instanceDir, 0700); err != nil {
+		log.Error(fmt.Sprintf("[MasternodeKeys] Failed to persist node key: %v", err))
+		return privateKeys
+	}
+	prefix := c.ResolvePath(datadirPrivateKey)
+	for i := 0; i < params.MasternodeKeyCount; i++ {
+		keyfile := prefix + strconv.Itoa(i)
+		if key, err := crypto.LoadECDSA(keyfile); err == nil {
+			privateKeys[i] = key
+			continue
+		}
+		key, err := crypto.GenerateKey()
+		if err != nil {
+			log.Crit(fmt.Sprintf("Failed to generate node key%d: %v", i, err))
+		}
+		if err := crypto.SaveECDSA(keyfile, key); err != nil {
+			log.Error(fmt.Sprintf("Failed to persist node key%d: %v", i, err))
+		}
+		privateKeys[i] = key
+	}
+	return privateKeys
+}
+
 // StaticNodes returns a list of node enode URLs configured as static nodes.
 func (c *Config) StaticNodes() []*enode.Node {
 	return c.parsePersistentNodes(&c.staticNodesWarning, c.ResolvePath(datadirStaticNodes))
@@ -419,7 +447,7 @@ func makeAccountManager(conf *Config) (*accounts.Manager, string, error) {
 	var ephemeral string
 	if keydir == "" {
 		// There is no datadir.
-		keydir, err = ioutil.TempDir("", "go-etherzero-keystore")
+		keydir, err = ioutil.TempDir("", "The go-taichain-keystore")
 		ephemeral = keydir
 	}
 

@@ -1,18 +1,18 @@
-// Copyright 2015 The go-etherzero Authors
-// This file is part of go-etherzero.
+// Copyright 2015 The The go-taichain Authors
+// This file is part of The go-taichain.
 //
-// go-etherzero is free software: you can redistribute it and/or modify
+// The go-taichain is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// go-etherzero is distributed in the hope that it will be useful,
+// The go-taichain is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with go-etherzero. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain. If not, see <http://www.gnu.org/licenses/>.
 
 // Contains the geth command usage template and generator.
 
@@ -33,7 +33,7 @@ import (
 var AppHelpTemplate = `NAME:
    {{.App.Name}} - {{.App.Usage}}
 
-   Copyright 2013-2018 The go-etherzero Authors
+   Copyright 2013-2018 The The go-taichain Authors
 
 USAGE:
    {{.App.HelpName}} [options]{{if .App.Commands}} command [command options]{{end}} {{if .App.ArgsUsage}}{{.App.ArgsUsage}}{{else}}[arguments...]{{end}}
@@ -195,6 +195,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.MinerGasTargetFlag,
 			utils.MinerGasLimitFlag,
 			utils.MinerEtherbaseFlag,
+			utils.MinerEtherbasesFlag,
 			utils.MinerExtraDataFlag,
 			utils.MinerRecommitIntervalFlag,
 			utils.MinerNoVerfiyFlag,
@@ -245,6 +246,7 @@ var AppHelpFlagGroups = []flagGroup{
 			utils.MinerLegacyGasTargetFlag,
 			utils.MinerLegacyGasPriceFlag,
 			utils.MinerLegacyEtherbaseFlag,
+			utils.MinerLegacyEtherbasesFlag,
 			utils.MinerLegacyExtraDataFlag,
 		},
 	},

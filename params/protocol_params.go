@@ -1,18 +1,18 @@
-// Copyright 2015 The go-etherzero Authors
-// This file is part of the go-etherzero library.
+// Copyright 2015 The The go-taichain Authors
+// This file is part of The go-taichain library.
 //
-// The go-etherzero library is free software: you can redistribute it and/or modify
+// The go-taichain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-etherzero library is distributed in the hope that it will be useful,
+// The go-taichain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-etherzero library. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain library. If not, see <http://www.gnu.org/licenses/>.
 
 package params
 
@@ -77,7 +77,7 @@ const (
 
 	// Precompiled contract gas prices
 
-	EcrecoverGas            uint64 = 3000   // Elliptic curve sender recovery gas price
+	EcrecoverGas            uint64 = 3000 // Elliptic curve sender recovery gas price
 	PeeridrecoverGas        uint64 = 3000
 	Sha256BaseGas           uint64 = 60     // Base price for a SHA256 operation
 	Sha256PerWordGas        uint64 = 12     // Per-word price for a SHA256 operation
@@ -91,10 +91,14 @@ const (
 	Bn256PairingBaseGas     uint64 = 100000 // Base price for an elliptic curve pairing check
 	Bn256PairingPerPointGas uint64 = 80000  // Per-point price for an elliptic curve pairing check
 
-	Epoch           uint64 = 600
-	Period          uint64 = 2
-	Period1Second          uint64 = 1
+	Epoch                   uint64 = 600
+	Period                  uint64 = 2
+	BlockCountInMonth       int64  = 129600  // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
+	BlockCountInEightMonth  int64  = 1036800 // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
+	BlockCountInTwelveMonth int64  = 1555200 // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
 
+	MasternodeKeyCount int   = 60
+	ChainID            int64 = 60
 )
 
 var (

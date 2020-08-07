@@ -1,5 +1,5 @@
 // Copyright 2015 The go-ethereum Authors
-// Copyright 2018 The go-etherzero Authors
+// Copyright 2018 The The go-taichain Authors
 // This file is part of the go-ethereum library.
 //
 // The go-ethereum library is free software: you can redistribute it and/or modify
@@ -28,7 +28,6 @@ import (
 	"github.com/taichain/go-taichain/common"
 	"github.com/taichain/go-taichain/contracts/masternode/contract"
 	"github.com/taichain/go-taichain/crypto"
-	"github.com/taichain/go-taichain/log"
 	"github.com/taichain/go-taichain/p2p/discv5"
 	"github.com/taichain/go-taichain/p2p/enode"
 	"github.com/taichain/go-taichain/params"
@@ -47,6 +46,31 @@ var (
 	errAlreadyRegistered = errors.New("masternode is already registered")
 	errNotRegistered     = errors.New("masternode is not registered")
 )
+
+type MasternodeData struct {
+	Index      int            `json:"index"     gencodec:"required"`
+	Id         string         `json:"id"        gencodec:"required"`
+	Data       string         `json:"data"      gencodec:"required"`
+	Note       string         `json:"note"      gencodec:"required"`
+	Coinbase   common.Address `json:"coinbase"`
+	Account    common.Address `json:"account"`
+	PrivateKey string         `json:"privateKey"       gencodec:"required"`
+	PublicKey  string         `json:"publicKey"       gencodec:"required"`
+}
+
+type MasternodeDatas []*MasternodeData
+
+func (s MasternodeDatas) Len() int {
+	return len(s)
+}
+
+func (s MasternodeDatas) Less(i, j int) bool {
+	return s[i].Index < s[j].Index
+}
+
+func (s MasternodeDatas) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
 
 type Masternode struct {
 	ENode *enode.Node
@@ -117,17 +141,18 @@ func GetIdsByBlockNumber(contract *contract.Contract, blockNumber *big.Int) ([]s
 	for lastId != ([8]byte{}) {
 		ctx, err = GetMasternodeContext(opts, contract, lastId)
 		if err != nil {
-			log.Error("GetIdsByBlockNumber", "error", err)
+			fmt.Println("GetIdsByBlockNumber error:", err)
 			break
 		}
 		lastId = ctx.pre
 		if new(big.Int).Sub(blockNumber, ctx.Node.BlockLastPing).Cmp(big.NewInt(1800)) > 0 {
 			continue
-		}else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(900)) < 0 {
+		} else if ctx.Node.BlockOnlineAcc.Cmp(big.NewInt(900)) < 0 {
 			continue
 		}
 		ids = append(ids, ctx.Node.ID)
 	}
+	
 	return ids, nil
 }
 

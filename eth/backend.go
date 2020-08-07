@@ -1,18 +1,18 @@
-// Copyright 2014 The go-etherzero Authors
-// This file is part of the go-etherzero library.
+// Copyright 2014 The The go-taichain Authors
+// This file is part of The go-taichain library.
 //
-// The go-etherzero library is free software: you can redistribute it and/or modify
+// The go-taichain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-etherzero library is distributed in the hope that it will be useful,
+// The go-taichain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-etherzero library. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package eth implements the Ethereum protocol.
 package eth
@@ -20,6 +20,7 @@ package eth
 import (
 	"errors"
 	"fmt"
+	"github.com/taichain/go-taichain/consensus/devote"
 	"math/big"
 	"runtime"
 	"sync"
@@ -31,7 +32,6 @@ import (
 	"github.com/taichain/go-taichain/common/hexutil"
 	"github.com/taichain/go-taichain/consensus"
 	"github.com/taichain/go-taichain/consensus/clique"
-	"github.com/taichain/go-taichain/consensus/devote"
 	"github.com/taichain/go-taichain/consensus/ethash"
 	"github.com/taichain/go-taichain/core"
 	"github.com/taichain/go-taichain/core/bloombits"
@@ -51,6 +51,7 @@ import (
 	"github.com/taichain/go-taichain/params"
 	"github.com/taichain/go-taichain/rlp"
 	"github.com/taichain/go-taichain/rpc"
+	"github.com/taichain/go-taichain/crypto"
 )
 
 type LesServer interface {
@@ -86,12 +87,13 @@ type Ethereum struct {
 
 	APIBackend *EthAPIBackend
 
-	miner             *miner.Miner
-	gasPrice          *big.Int
-	etherbase         common.Address
+	miner     *miner.Miner
+	gasPrice  *big.Int
+	etherbase common.Address
+	etherbases        map[string]common.Address
 	witness           string
-	networkID         uint64
-	netRPCService     *ethapi.PublicNetAPI
+	networkID     uint64
+	netRPCService *ethapi.PublicNetAPI
 	masternodeManager *MasternodeManager
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
@@ -127,6 +129,11 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	}
 	log.Info("Initialised chain configuration", "config", chainConfig)
 
+	var etherbases = config.Etherbases
+	if len(etherbases) == 0 {
+		etherbases = make(map[string]common.Address, params.MasternodeKeyCount)
+	}
+
 	eth := &Ethereum{
 		config:         config,
 		chainDb:        chainDb,
@@ -138,6 +145,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		networkID:      config.NetworkId,
 		gasPrice:       config.MinerGasPrice,
 		etherbase:      config.Etherbase,
+		etherbases:     etherbases,
 		witness:        config.Witness,
 		bloomRequests:  make(chan chan *bloombits.Retrieval),
 		bloomIndexer:   NewBloomIndexer(chainDb, params.BloomBitsBlocks, params.BloomConfirms),
@@ -417,6 +425,34 @@ func (s *Ethereum) SetEtherbase(etherbase common.Address) {
 	s.miner.SetEtherbase(etherbase)
 }
 
+func (s *Ethereum) SetEtherbaseById(id string, etherbase common.Address) bool {
+	s.lock.Lock()
+	s.etherbases[id] = etherbase
+	s.lock.Unlock()
+
+	return s.miner.SetEtherbaseById(id, etherbase)
+}
+
+func (s *Ethereum) SetMinerKey(index int, etherbase common.Address, key common.Hash) bool {
+	k, error := crypto.ToECDSA(key.Bytes())
+	if error == nil {
+		if ok, id := s.masternodeManager.SetMinerKey(index, etherbase, k); ok {
+			witnesses := s.masternodeManager.GetWitnesses()
+			if devote, ok := s.engine.(*devote.Devote); ok {
+				devote.Authorize(witnesses, s.masternodeManager.SignHash)
+				// fmt.Println("witnesses", len(witnesses), witnesses)
+				s.lock.Lock()
+				s.etherbases[id] = etherbase
+				s.lock.Unlock()
+				return s.miner.SetEtherbaseById(id, etherbase)
+			}
+		}
+	}else{
+		fmt.Println("SetMinerKey error:", error)
+	}
+	return false
+}
+
 func (s *Ethereum) Witness() (witness string, err error) {
 	s.lock.RLock()
 	witness = s.witness
@@ -465,15 +501,9 @@ func (s *Ethereum) StartMining(threads int) error {
 			log.Error("Cannot start mining without etherbase", "err", err)
 			return fmt.Errorf("etherbase missing: %v", err)
 		}
-		witness, err := s.Witness()
-		fmt.Printf("backend StartMining witness:%s\n", witness)
-		if err != nil {
-			log.Error("Cannot start mining without Witness", "err", err)
-			return fmt.Errorf("Witness missing: %v", err)
-		}
-		// no need to verify
+		witnesses := s.masternodeManager.GetWitnesses()
 		if devote, ok := s.engine.(*devote.Devote); ok {
-			devote.Authorize(witness, s.masternodeManager.SignHash)
+			devote.Authorize(witnesses, s.masternodeManager.SignHash)
 		}
 		if clique, ok := s.engine.(*clique.Clique); ok {
 			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
@@ -487,7 +517,7 @@ func (s *Ethereum) StartMining(threads int) error {
 		// introduced to speed sync times.
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
 
-		go s.miner.Start(eb)
+		go s.miner.Start(eb, s.etherbases)
 	}
 	return nil
 }
@@ -519,6 +549,7 @@ func (s *Ethereum) IsListening() bool                  { return true } // Always
 func (s *Ethereum) EthVersion() int                    { return int(s.protocolManager.SubProtocols[0].Version) }
 func (s *Ethereum) NetVersion() uint64                 { return s.networkID }
 func (s *Ethereum) Downloader() *downloader.Downloader { return s.protocolManager.downloader }
+func (s *Ethereum) CheckWitnessId(id string) bool      { return s.masternodeManager.CheckMasternodeId(id) }
 
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.

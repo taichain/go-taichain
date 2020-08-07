@@ -1,18 +1,18 @@
-// Copyright 2015 The go-etherzero Authors
-// This file is part of the go-etherzero library.
+// Copyright 2015 The The go-taichain Authors
+// This file is part of The go-taichain library.
 //
-// The go-etherzero library is free software: you can redistribute it and/or modify
+// The go-taichain library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The go-etherzero library is distributed in the hope that it will be useful,
+// The go-taichain library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the go-etherzero library. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain library. If not, see <http://www.gnu.org/licenses/>.
 
 package eth
 
@@ -37,6 +37,9 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"github.com/taichain/go-taichain/core/types/masternode"
+	"github.com/taichain/go-taichain/crypto"
+	"sort"
 )
 
 // PublicEthereumAPI provides an API to access Ethereum full node-related
@@ -78,6 +81,59 @@ func (api *PublicEthereumAPI) ChainId() hexutil.Uint64 {
 // It offers only methods that operate on data that pose no security risk when it is publicly accessible.
 type PublicMinerAPI struct {
 	e *Ethereum
+}
+
+func (api *PrivateMinerAPI) SetEtherbaseById(id string, etherbase common.Address) bool {
+	return api.e.SetEtherbaseById(id, etherbase)
+}
+
+func (api *PrivateMinerAPI) SetMinerKey(index int, etherbase common.Address, key common.Hash) bool {
+	return api.e.SetMinerKey(index, etherbase, key)
+}
+
+func (api *PrivateMinerAPI) Miners() string {
+	var miners []string
+	for id, account := range api.e.etherbases {
+		if account == (common.Address{}) {
+			continue
+		}
+		if _, ok := api.e.masternodeManager.masternodeKeys[id]; ok {
+			miners = append(miners, fmt.Sprintf("%s=%s", id, account.String()))
+		}
+	}
+	return strings.Join(miners, ",")
+}
+
+func (api *PrivateMinerAPI) Masternodes() masternode.MasternodeDatas {
+	var result masternode.MasternodeDatas
+	for _, account := range api.e.masternodeManager.masternodeAccounts {
+		key := api.e.masternodeManager.masternodeKeys[account.id]
+		xy := api.e.masternodeManager.XY(key)
+		var data string
+		var note string
+		if account.isActive {
+			data = ""
+			note = "ENABLED"
+		} else {
+			data = fmt.Sprintf("0x2f926732%x", xy)
+			note = "MISSING"
+		}
+		mn := &masternode.MasternodeData{
+			Index:      account.index,
+			Id:         account.id,
+			Data:       data,
+			Account:    account.address,
+			PrivateKey: common.Bytes2Hex(crypto.FromECDSA(key)),
+			PublicKey:  fmt.Sprintf("%x", xy),
+			Note:       note,
+		}
+		if coinbase, ok := api.e.etherbases[account.id]; ok {
+			mn.Coinbase = coinbase
+		}
+		result = append(result, mn)
+	}
+	sort.Sort(result)
+	return result
 }
 
 // NewPublicMinerAPI create a new PublicMinerAPI instance.

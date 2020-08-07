@@ -1,18 +1,18 @@
-// Copyright 2018 The go-etherzero Authors
-// This file is part of go-etherzero.
+// Copyright 2018 The The go-taichain Authors
+// This file is part of The go-taichain.
 //
-// go-etherzero is free software: you can redistribute it and/or modify
+// The go-taichain is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// go-etherzero is distributed in the hope that it will be useful,
+// The go-taichain is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with go-etherzero. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain. If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -28,7 +28,7 @@ import (
 	"github.com/taichain/go-taichain/core"
 )
 
-// Tests the go-etherzero to Aleth chainspec conversion for the Stureby testnet.
+// Tests the The go-taichain to Aleth chainspec conversion for the Stureby testnet.
 func TestAlethSturebyConverter(t *testing.T) {
 	blob, err := ioutil.ReadFile("testdata/stureby_geth.json")
 	if err != nil {
@@ -67,7 +67,7 @@ func TestAlethSturebyConverter(t *testing.T) {
 	}
 }
 
-// Tests the go-etherzero to Parity chainspec conversion for the Stureby testnet.
+// Tests the The go-taichain to Parity chainspec conversion for the Stureby testnet.
 func TestParitySturebyConverter(t *testing.T) {
 	blob, err := ioutil.ReadFile("testdata/stureby_geth.json")
 	if err != nil {

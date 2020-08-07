@@ -6,7 +6,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/taichain/go-taichain/proto";
+option go_package = "github.com/etherzero/go-etherzero/proto";
 
 // Node service API
 // 

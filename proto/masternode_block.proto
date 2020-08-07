@@ -4,7 +4,7 @@ package proto;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "proto/attestation.proto";
 
-option go_package = "github.com/taichain/go-taichain/proto";
+option go_package = "github.com/etherzero/go-etherzero/proto";
 
 // The Etherzero 2.0 masternode block.
 message MasternodeBlock {

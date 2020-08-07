@@ -4,7 +4,7 @@ package proto;
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 
-option go_package = "github.com/taichain/go-taichain/proto";
+option go_package = "github.com/etherzero/go-etherzero/proto";
 
 message Attestation {
     // A bitfield representation of validator indices that have voted exactly

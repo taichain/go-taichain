@@ -6,7 +6,7 @@ import "google/protobuf/empty.proto";
 import "proto/masternode_block.proto";
 import "proto/attestation.proto";
 
-option go_package = "github.com/taichain/go-taichain/proto";
+option go_package = "github.com/etherzero/go-etherzero/proto";
 
 // Slasher service API
 // 

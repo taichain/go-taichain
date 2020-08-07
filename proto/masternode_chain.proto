@@ -10,7 +10,7 @@ import "proto/attestation.proto";
 import "proto/masternode_block.proto";
 import "proto/validator.proto";
 
-option go_package = "github.com/taichain/go-taichain/proto";
+option go_package = "github.com/etherzero/go-etherzero/proto";
 
 // Masternode chain API
 //

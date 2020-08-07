@@ -40,6 +40,7 @@ type Backend interface {
 	BlockChain() *core.BlockChain
 	TxPool() *core.TxPool
 	ChainDb() ethdb.Database
+	CheckWitnessId(id string) bool
 }
 
 // Miner creates blocks and searches for proof-of-work values.
@@ -49,6 +50,7 @@ type Miner struct {
 	worker *worker
 
 	coinbase common.Address
+	coinbases map[string]common.Address
 	mining   int32
 	eth      Backend
 	engine   consensus.Engine
@@ -64,6 +66,7 @@ func New(eth Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 		engine:   engine,
 		worker:   newWorker(config, engine, common.Address{}, eth, mux),
 		canStart: 1,
+		coinbases: make(map[string]common.Address, params.MasternodeKeyCount),
 	}
 	//miner.Register(NewCpuAgent(eth.BlockChain(), engine))
 	go miner.update()
@@ -93,7 +96,7 @@ out:
 			atomic.StoreInt32(&self.canStart, 1)
 			atomic.StoreInt32(&self.shouldStart, 0)
 			if shouldStart {
-				self.Start(self.coinbase)
+				self.Start(self.coinbase, self.coinbases)
 			}
 			// unsubscribe. we're only interested in this event once
 			events.Unsubscribe()
@@ -103,10 +106,16 @@ out:
 	}
 }
 
-func (self *Miner) Start(coinbase common.Address) {
+func (self *Miner) Start(coinbase common.Address, coinbases map[string]common.Address) {
 	atomic.StoreInt32(&self.shouldStart, 1)
 	self.SetEtherbase(coinbase)
-
+	if coinbases != nil {
+		for id, address := range coinbases {
+			if !self.SetEtherbaseById(id, address) {
+				log.Error("SetEtherbaseById Error", "id", id, "address", address)
+			}
+		}
+	}
 	if atomic.LoadInt32(&self.canStart) == 0 {
 		log.Info("Network syncing, will start miner afterwards")
 		return
@@ -115,7 +124,8 @@ func (self *Miner) Start(coinbase common.Address) {
 
 	log.Info("Starting mining operation")
 	self.worker.start()
-	self.worker.commitNewWork()
+	// TODO: comment last line?
+	// self.worker.commitNewWork()
 }
 
 func (self *Miner) Stop() {
@@ -179,4 +189,9 @@ func (self *Miner) PendingBlock() *types.Block {
 func (self *Miner) SetEtherbase(addr common.Address) {
 	self.coinbase = addr
 	self.worker.setEtherbase(addr)
+}
+
+func (self *Miner) SetEtherbaseById(id string, addr common.Address) bool {
+	self.coinbases[id] = addr
+	return self.worker.setEtherbaseById(id, addr)
 }

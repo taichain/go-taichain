@@ -1,5 +1,5 @@
 // Package params defines important constants that are essential to the
-// Etherzero 2.0 services.
+// TITprotocol 2.0 services.
 package params
 
 import (
@@ -90,7 +90,7 @@ type MasternodeChainConfig struct {
 	ValidatorPrivkeyFileName  string        // ValidatorPrivKeyFileName specifies the string name of a validator private key file.
 	WithdrawalPrivkeyFileName string        // WithdrawalPrivKeyFileName specifies the string name of a withdrawal private key file.
 	RPCSyncCheck              time.Duration // Number of seconds to query the sync service, to find out if the node is synced or not.
-	TestnetContractEndpoint   string        // TestnetContractEndpoint to fetch the contract address of the Etherzero testnet.
+	TestnetContractEndpoint   string        // TestnetContractEndpoint to fetch the contract address of the TITprotocol testnet.
 	GoerliBlockTime           uint64        // GoerliBlockTime is the number of seconds on avg a Goerli block is created.
 	GenesisForkVersion        []byte        `yaml:"GENESIS_FORK_VERSION"` // GenesisForkVersion is used to track fork version between state transitions.
 	EmptySignature            [96]byte      // EmptySignature is used to represent a zeroed out BLS Signature.
@@ -182,7 +182,7 @@ var defaultMasternodeConfig = &MasternodeChainConfig{
 	DomainVoluntaryExit:  bytesutil.Bytes4(4),
 	DomainTransfer:       bytesutil.Bytes4(5),
 
-	// Etherzero Masternode sharding constants.
+	// TITprotocol Masternode sharding constants.
 	GweiPerEth:                1000000000,
 	LogBlockDelay:             2,
 	BLSPubkeyLength:           48,
@@ -197,7 +197,7 @@ var defaultMasternodeConfig = &MasternodeChainConfig{
 	MaxPageSize:               500,
 
 	// Testnet misc values.
-	TestnetContractEndpoint: "https://www.etherzero.org/contract", // defines an http endpoint to fetch the testnet contract addr.
+	TestnetContractEndpoint: "https://www.TITprotocol.org/contract", // defines an http endpoint to fetch the testnet contract addr.
 }
 
 var defaultShardConfig = &ShardChainConfig{

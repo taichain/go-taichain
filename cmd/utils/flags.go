@@ -1,20 +1,20 @@
-// Copyright 2015 The go-etherzero Authors
-// This file is part of go-etherzero.
+// Copyright 2015 The The go-taichain Authors
+// This file is part of The go-taichain.
 //
-// go-etherzero is free software: you can redistribute it and/or modify
+// The go-taichain is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// go-etherzero is distributed in the hope that it will be useful,
+// The go-taichain is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with go-etherzero. If not, see <http://www.gnu.org/licenses/>.
+// along with The go-taichain. If not, see <http://www.gnu.org/licenses/>.
 
-// Package utils contains internal helper functions for go-etherzero commands.
+// Package utils contains internal helper functions for The go-taichain commands.
 package utils
 
 import (
@@ -57,7 +57,8 @@ import (
 	"github.com/taichain/go-taichain/p2p/netutil"
 	"github.com/taichain/go-taichain/params"
 	whisper "github.com/taichain/go-taichain/whisper/whisperv6"
-	"gopkg.in/urfave/cli.v1"
+	cli "gopkg.in/urfave/cli.v1"
+	"regexp"
 )
 
 var (
@@ -373,10 +374,20 @@ var (
 		Usage: "Public address for block mining rewards (default = first account)",
 		Value: "0",
 	}
+	MinerEtherbasesFlag = cli.StringFlag{
+		Name:  "miner.etherbases",
+		Usage: "Public address for block mining rewards (id=address,id=address,...)",
+		Value: "",
+	}
 	MinerLegacyEtherbaseFlag = cli.StringFlag{
 		Name:  "etherbase",
 		Usage: "Public address for block mining rewards (default = first account, deprecated, use --miner.etherbase)",
 		Value: "0",
+	}
+	MinerLegacyEtherbasesFlag = cli.StringFlag{
+		Name:  "etherbases",
+		Usage: "Public address for block mining rewards (id=address,id=address,...)",
+		Value: "",
 	}
 	MinerExtraDataFlag = cli.StringFlag{
 		Name:  "miner.extradata",
@@ -513,7 +524,7 @@ var (
 	ListenPortFlag = cli.IntFlag{
 		Name:  "port",
 		Usage: "Network listening port",
-		Value: 21212,
+		Value: 30303,
 	}
 	BootnodesFlag = cli.StringFlag{
 		Name:  "bootnodes",
@@ -919,6 +930,44 @@ func setEtherbase(ctx *cli.Context, ks *keystore.KeyStore, cfg *eth.Config) {
 	}
 }
 
+func setEtherbases(ctx *cli.Context, cfg *eth.Config) {
+	etherbases := make(map[string]common.Address, params.MasternodeKeyCount)
+	var src string
+	if ctx.GlobalIsSet(MinerLegacyEtherbasesFlag.Name) {
+		src = ctx.GlobalString(MinerLegacyEtherbasesFlag.Name)
+	}
+	if ctx.GlobalIsSet(MinerEtherbasesFlag.Name) {
+		src = ctx.GlobalString(MinerEtherbasesFlag.Name)
+	}
+	if len(src) == 0 {
+		return
+	}
+	etherbaseKVs := strings.Split(src, ",")
+	for i, KVs := range etherbaseKVs {
+		if i > params.MasternodeKeyCount {
+			Fatalf("Too many etherbase: %v", len(etherbaseKVs))
+			break
+		}
+		kv := strings.Split(KVs, "=")
+		if(len(kv) != 2) {
+			Fatalf("Failed to read etherbase: %v", kv)
+			break
+		}
+		reg := regexp.MustCompile("\\s+")
+		k := reg.ReplaceAllString(kv[0], "")
+		if len(k) == 18 && (k[:2] == "0x" || k[:2] == "0X") {
+			k = k[2:]
+		}
+		if len(k) != 16 {
+			Fatalf("Failed to read key of etherbase: %v", k)
+			break
+		}
+		v := reg.ReplaceAllString(kv[1], "")
+		etherbases[k] = common.HexToAddress(v)
+	}
+	cfg.Etherbases = etherbases
+}
+
 // MakePasswordList reads password lines from the file specified by the global --password flag.
 func MakePasswordList(ctx *cli.Context) []string {
 	path := ctx.GlobalString(PasswordFileFlag.Name)
@@ -1198,6 +1247,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 	setEtherbase(ctx, ks, cfg)
+	setEtherbases(ctx, cfg)
 	setGPO(ctx, &cfg.GPO)
 	setTxPool(ctx, &cfg.TxPool)
 	setEthash(ctx, cfg)
@@ -1436,7 +1486,7 @@ func MakeChainDatabase(ctx *cli.Context, stack *node.Node) ethdb.Database {
 		cache   = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheDatabaseFlag.Name) / 100
 		handles = makeDatabaseHandles()
 	)
-	name := "chaindata"
+	name := "blocks"
 	if ctx.GlobalString(SyncModeFlag.Name) == "light" {
 		name = "lightchaindata"
 	}
