@@ -115,9 +115,9 @@ type worker struct {
 	proc    core.Validator
 	chainDb ethdb.Database
 
-	coinbase common.Address
+	coinbase  common.Address
 	coinbases map[string]common.Address
-	extra    []byte
+	extra     []byte
 
 	currentMu sync.Mutex
 	current   *Work
@@ -495,7 +495,7 @@ func (self *worker) commitNewWork() (*Work, error) {
 
 	tstamp := tstart.Unix()
 	if int64(parent.Time()) >= tstamp {
-		tstamp = int64(parent.Time()) + 1
+		tstamp = int64(parent.Time()) + 2
 	}
 	// this will ensure we're not going off too far in the future
 	if now := time.Now().Unix(); tstamp > now+1 {
@@ -517,9 +517,9 @@ func (self *worker) commitNewWork() (*Work, error) {
 	}
 	// Only set the coinbase if we are mining (avoid spurious block rewards)
 	if atomic.LoadInt32(&self.mining) == 1 {
-		if coinbase, ok := self.coinbases[header.Witness]; ok{
+		if coinbase, ok := self.coinbases[header.Witness]; ok {
 			header.Coinbase = coinbase
-		}else{
+		} else {
 			header.Coinbase = self.coinbase
 		}
 	}
@@ -540,9 +540,9 @@ func (self *worker) commitNewWork() (*Work, error) {
 
 	// compute uncles for the new block.
 	var (
-		uncles    []*types.Header
+		uncles []*types.Header
 	)
-	if engine, ok := self.engine.(*devote.Devote); ok{
+	if engine, ok := self.engine.(*devote.Devote); ok {
 		engine.SetDevoteDB(self.chainDb)
 	}
 

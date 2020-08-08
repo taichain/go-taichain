@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/golang-lru"
 	"github.com/taichain/go-taichain/common"
 	"github.com/taichain/go-taichain/consensus"
 	"github.com/taichain/go-taichain/consensus/misc"
@@ -38,7 +39,6 @@ import (
 	"github.com/taichain/go-taichain/params"
 	"github.com/taichain/go-taichain/rlp"
 	"github.com/taichain/go-taichain/rpc"
-	"github.com/hashicorp/golang-lru"
 )
 
 const (
@@ -54,9 +54,6 @@ const (
 )
 
 var (
-	TITprotocolBlockReward = big.NewInt(0.3375e+18) // Block reward in wei to masternode account when successfully mining a block
-	rewardToCommunity    = big.NewInt(0.1125e+18) // Block reward in wei to community account when successfully mining a block
-
 	timeOfFirstBlock   = uint64(0)
 	confirmedBlockHead = []byte("confirmed-block-head")
 	uncleHash          = types.CalcUncleHash(nil) // Always Keccak256(RLP([])) as uncles are meaningless outside of PoW.
@@ -69,9 +66,9 @@ var (
 		4: big.NewInt(10.1663e+9), // the fifth year
 		5: big.NewInt(8.1324e+9),  // the sixth year
 	}
-	baseLastYear    = big.NewInt(8.1324e+9)
+	baseLastYear   = big.NewInt(8.1324e+9)
 	secondLastYear = big.NewInt(7.6389e+9) // secondLastYear
-	firstLastYear = big.NewInt(3.8589e+9) // firstLastYear
+	firstLastYear  = big.NewInt(3.8589e+9) // firstLastYear
 )
 
 var (
@@ -285,23 +282,18 @@ func (d *Devote) Prepare(chain consensus.ChainReader, header *types.Header) erro
 func AccumulateRewards(govAddress common.Address, state *state.StateDB, header *types.Header, uncles []*types.Header) {
 	// Select the correct block reward based on chain progression
 	blockReward := getBlockReward(header)
-	fmt.Println("blockReward is \n", blockReward)
+	//fmt.Println("blockReward is \n", blockReward)
 	// Accumulate the rewards for the masternode and any included uncles
 	reward := new(big.Int).Set(blockReward)
 	state.AddBalance(header.Coinbase, reward, header.Number)
-
-	//  Accumulate the rewards to community account
-	rewardForCommunity := new(big.Int).Set(rewardToCommunity)
-	state.AddBalance(govAddress, rewardForCommunity, header.Number)
 }
 
 // 1-->500000---》0.3858
-func getBlockReward(header *types.Header) (*big.Int) {
+func getBlockReward(header *types.Header) *big.Int {
 	headerNumber := header.Number.Int64()
-	fmt.Println("header.Number is ", header.Number.String())
-	if ((headerNumber >= 0) && (headerNumber < params.BlockCountInEightMonth)) {
+	if (headerNumber >= 0) && (headerNumber < params.BlockCountInEightMonth) {
 		return new(big.Int).Mul(firstLastYear, big.NewInt(1e8))
-	} else if ((headerNumber >= params.BlockCountInEightMonth) && (headerNumber < params.BlockCountInTwelveMonth)) {
+	} else if (headerNumber >= params.BlockCountInEightMonth) && (headerNumber < params.BlockCountInTwelveMonth) {
 		return new(big.Int).Mul(secondLastYear, big.NewInt(1e8))
 	}
 	// the forth year ,decrease by half
