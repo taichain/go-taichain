@@ -366,13 +366,13 @@ func DefaultGenesisBlock() *Genesis {
 // DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
 func DefaultTestnetGenesisBlock() *Genesis {
 	alloc := decodePrealloc(testnetAllocData)
-	alloc[common.BytesToAddress(params.MasterndeContractAddress.Bytes())] = masternodeContractAccount(params.TestnetMasternodes)
+	alloc[common.BytesToAddress(params.MasterndeContractAddress.Bytes())] = masternodeContractAccount(params.MainnetMasternodes)
 	alloc[common.HexToAddress("0x2ccd4e66af1c8041dea40bd95a9be81dacc94654")] = GenesisAccount{
 		Balance: new(big.Int).Mul(big.NewInt(1e+15), big.NewInt(1e+15)),
 	}
 	config := params.TestnetChainConfig
 	var witnesses []string
-	for _, n := range params.TestnetMasternodes {
+	for _, n := range params.MainnetMasternodes {
 		node := enode.MustParseV4(n)
 		pubkey := node.Pubkey()
 		//addr := crypto.PubkeyToAddress(*pubkey)
