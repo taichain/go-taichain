@@ -495,7 +495,7 @@ func (self *worker) commitNewWork() (*Work, error) {
 
 	tstamp := tstart.Unix()
 	if int64(parent.Time()) >= tstamp {
-		tstamp = int64(parent.Time()) + 2
+		tstamp = int64(parent.Time()) + 1
 	}
 	// this will ensure we're not going off too far in the future
 	if now := time.Now().Unix(); tstamp > now+1 {
