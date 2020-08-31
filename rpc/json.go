@@ -109,6 +109,8 @@ func NewCodec(rwc io.ReadWriteCloser, encode, decode func(v interface{}) error) 
 
 // NewJSONCodec creates a new RPC server codec with support for JSON-RPC 2.0.
 func NewJSONCodec(rwc io.ReadWriteCloser) ServerCodec {
+	rwc = &ReadWriteCloserWrapper{rwc}
+
 	enc := json.NewEncoder(rwc)
 	dec := json.NewDecoder(rwc)
 	dec.UseNumber()
