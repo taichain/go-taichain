@@ -28,6 +28,7 @@ import (
 
 	"encoding/json"
 
+	"github.com/hashicorp/golang-lru"
 	"github.com/taichain/go-taichain/common"
 	"github.com/taichain/go-taichain/core/types"
 	"github.com/taichain/go-taichain/core/types/devotedb"
@@ -35,18 +36,17 @@ import (
 	"github.com/taichain/go-taichain/ethdb"
 	"github.com/taichain/go-taichain/log"
 	"github.com/taichain/go-taichain/params"
-	"github.com/hashicorp/golang-lru"
 )
 
 type Snapshot struct {
 	devoteDB *devotedb.DevoteDB
-	config   *params.DevoteConfig                 // Consensus engine parameters to fine tune behavior
-	sigcache *lru.ARCCache                        // Cache of recent block signatures to speed up ecrecover
-	Hash     common.Hash                          //Block hash where the snapshot was created
-	Number   uint64                               //Cycle number where the snapshot was created
-	Cycle    uint64                               //Cycle number where the snapshot was created
-	Signers  map[string]struct{} `json:"signers"` // Set of authorized signers at this moment
-	Recents  map[uint64]string                    // set of recent masternodes for spam protections
+	config   *params.DevoteConfig // Consensus engine parameters to fine tune behavior
+	sigcache *lru.ARCCache        // Cache of recent block signatures to speed up ecrecover
+	Hash     common.Hash          //Block hash where the snapshot was created
+	Number   uint64               //Cycle number where the snapshot was created
+	Cycle    uint64               //Cycle number where the snapshot was created
+	Signers  map[string]struct{}  `json:"signers"` // Set of authorized signers at this moment
+	Recents  map[uint64]string    // set of recent masternodes for spam protections
 
 	TimeStamp uint64
 	mu        sync.Mutex
@@ -73,10 +73,10 @@ func newSnapshot(config *params.DevoteConfig, db *devotedb.DevoteDB) *Snapshot {
 // copy creates a deep copy of the snapshot, though not the individual votes.
 func (s *Snapshot) copy() *Snapshot {
 	cpy := &Snapshot{
-		Number:   s.Number,
-		Hash:     s.Hash,
-		Signers:  make(map[string]struct{}),
-		Recents:  make(map[uint64]string),
+		Number:  s.Number,
+		Hash:    s.Hash,
+		Signers: make(map[string]struct{}),
+		Recents: make(map[uint64]string),
 	}
 	for signer := range s.Signers {
 		cpy.Signers[signer] = struct{}{}
@@ -272,6 +272,16 @@ func (snap *Snapshot) uncastImproved(cycle uint64, nodes []string, safeSize int)
 	}
 
 	return result, nil
+}
+
+func (snap *Snapshot) isGenesis(witness string) bool {
+	in := false
+	for _, w := range params.MainnetInitIds {
+		if w == witness {
+			return true
+		}
+	}
+	return in
 }
 
 func (snap *Snapshot) lookup(now uint64) (witness string, err error) {

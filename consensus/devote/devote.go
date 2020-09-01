@@ -529,16 +529,8 @@ func (d *Devote) CheckWitness(lastBlock *types.Block, now int64) error {
 		return err
 	}
 	log.Info("devote checkWitness lookup", " witness", witness, "signer", d.signer, "cycle", currentCycle, "blockNumber", lastBlock.Number())
-	// === single ===
-	//if (witness == "") || witness != d.signer {
-	//	return ErrInvalidBlockWitness
-	//}
-	//logTime := time.Now().Format("[2006-01-02 15:04:05]")
-	//fmt.Printf("%s [CheckWitness] Found my witness(%s)\n", logTime, witness)
-	//return nil
-	// === multil ===
 	for _, signer := range d.witnesses {
-		if witness == signer {
+		if witness == signer && snap.isGenesis(witness){
 			d.signer = signer
 			logTime := time.Now().Format("[2006-01-02 15:04:05]")
 			fmt.Printf("%s [CheckWitness] Found my witness(%s)\n", logTime, witness)
@@ -598,15 +590,6 @@ func (d *Devote) Seal(chain consensus.ChainReader, block *types.Block, stop <-ch
 func (d *Devote) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *types.Header) *big.Int {
 	return big.NewInt(1)
 }
-
-//func (d *Devote) Authorize(signer string, signFn SignerFn) {
-//	d.mu.Lock()
-//	defer d.mu.Unlock()
-//
-//	d.signer = signer
-//	d.signFn = signFn
-//	log.Info("devote Authorize ", "signer", signer)
-//}
 func (d *Devote) Authorize(witnesses []string, signFn SignerFn) {
 	d.mu.Lock()
 	defer d.mu.Unlock()

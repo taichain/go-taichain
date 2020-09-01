@@ -172,13 +172,6 @@ func (d *DevoteDB) GetStatsNumber(key []byte) uint64 {
 }
 
 func (d *DevoteDB) GetWitnesses(cycle uint64) ([]string, error) {
-	//dc := d.dCache
-	//if dc != nil {
-	//	list, err := dc.GetWitnesses(d.db, cycle)
-	//	if err == nil {
-	//		return list, nil
-	//	}
-	//}
 	newCycleBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(newCycleBytes, uint64(cycle))
 	// Load from DB in case it is missing.
@@ -191,11 +184,13 @@ func (d *DevoteDB) GetWitnesses(cycle uint64) ([]string, error) {
 	if err := rlp.DecodeBytes(witnessRLP, &witnesses); err != nil {
 		return nil, fmt.Errorf("failed to decode witnesses: %s", err)
 	}
+
 	if err != nil {
 		return nil, err
 	}
 	return witnesses, nil
 }
+
 
 func (d *DevoteDB) SetWitnesses(cycle uint64, witnesses []string) error {
 	if d.dCache != nil {
