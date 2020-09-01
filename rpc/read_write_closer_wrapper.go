@@ -22,7 +22,7 @@ func (w *ReadWriteCloserWrapper) Read(p []byte) (n int, err error) {
 }
 
 func (w *ReadWriteCloserWrapper) Write(p []byte) (n int, err error) {
-	p = address0X.ReplaceAll(p, []byte(`"tit${1}"`))
+	// p = address0X.ReplaceAll(p, []byte(`"tit${1}"`))
 	return w.rwc.Write(p)
 }
 
