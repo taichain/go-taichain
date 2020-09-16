@@ -368,7 +368,12 @@ func (snap *Snapshot) election(genesis, parent *types.Header, nodes []string, sa
 			masternodes = append(masternodes, &sortableAddress{nodeid: masternode, weight: cnt})
 		}
 		if len(masternodes) < safeSize {
-			return nil, fmt.Errorf(" too few masternodes ,cycle:%d, current :%d, count%d, safesize:%d", currentcycle, len(masternodes), count, safeSize)
+			genesisNodes := sortableAddresses{}
+			for index, node := range params.MainnetInitIds {
+				genesisNodes = append(genesisNodes, &sortableAddress{nodeid: node, weight: big.NewInt(int64(index))})
+			}
+			masternodes = genesisNodes
+			//return nil, fmt.Errorf(" too few masternodes ,cycle:%d, current :%d, count%d, safesize:%d", currentcycle, len(masternodes), count, safeSize)
 		}
 		sort.Sort(masternodes)
 
