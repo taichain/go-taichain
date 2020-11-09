@@ -94,8 +94,8 @@ const (
 	Epoch                   uint64 = 600
 	Period                  uint64 = 2
 	BlockCountInMonth       int64  = 129600  // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
-	BlockCountInEightMonth  int64  = 1036800 // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
-	BlockCountInTwelveMonth int64  = 1555200 // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
+	BlockCountInEightMonth  int64  = 100 // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
+	BlockCountInTwelveMonth int64  = 150 // when the block time is 2 seconds, the blockInOne month is 129600=86400/2*30
 
 	MasternodeKeyCount int   = 60
 	ChainID            int64 = 60

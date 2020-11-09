@@ -70,7 +70,7 @@ var (
 	secondLastYear = big.NewInt(7.6389e+9) // secondLastYear
 	firstLastYear  = big.NewInt(3.8589e+9) // firstLastYear
 
-	titV1BlockNumber = big.NewInt(3940400)
+	titV1BlockNumber = big.NewInt(390)
 )
 
 var (
@@ -298,17 +298,22 @@ func getBlockReward(header *types.Header) *big.Int {
 
 	if isV1Forked(titV1BlockNumber, header.Number) {
 		if (headerNumber >= 0) && (headerNumber < BlockCountInEightMonth) {
+			fmt.Printf("isV1Forked in eight month number=%d,reward=%d /n",headerNumber,new(big.Int).Mul(firstLastYear, big.NewInt(1e8)))
 			return new(big.Int).Mul(firstLastYear, big.NewInt(1e8))
 		} else if (headerNumber >= BlockCountInEightMonth) && (headerNumber < BlockCountInTwelveMonth) {
+			fmt.Printf("isV1Forked in twelve month number=%d,reward=%d /n",headerNumber,new(big.Int).Mul(secondLastYear, big.NewInt(1e8)))
 			return new(big.Int).Mul(secondLastYear, big.NewInt(1e8))
 		}
 	} else {
 		if (headerNumber >= 0) && (headerNumber < params.BlockCountInEightMonth) {
+			fmt.Printf("Not V1Forked in eight month number=%d,reward=%d /n",headerNumber,new(big.Int).Mul(firstLastYear, big.NewInt(1e8)))
 			return new(big.Int).Mul(firstLastYear, big.NewInt(1e8))
 		} else if (headerNumber >= params.BlockCountInEightMonth) && (headerNumber < params.BlockCountInTwelveMonth) {
+			fmt.Printf("Not V1Forked in twelve month number=%d,reward=%d /n",headerNumber,new(big.Int).Mul(secondLastYear, big.NewInt(1e8)))
 			return new(big.Int).Mul(secondLastYear, big.NewInt(1e8))
 		}
 	}
+	fmt.Printf("Not V1Forked in forth month number=%d,reward=%d /n",headerNumber,new(big.Int).Mul(baseLastYear, big.NewInt(1e8)))
 	// the forth year ,decrease by half
 	return new(big.Int).Mul(baseLastYear, big.NewInt(1e8))
 }
