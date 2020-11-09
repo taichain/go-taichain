@@ -69,6 +69,8 @@ var (
 	baseLastYear   = big.NewInt(8.1324e+9)
 	secondLastYear = big.NewInt(7.6389e+9) // secondLastYear
 	firstLastYear  = big.NewInt(3.8589e+9) // firstLastYear
+
+	titV1BlockNumber = big.NewInt(3940400)
 )
 
 var (
@@ -291,14 +293,32 @@ func AccumulateRewards(govAddress common.Address, state *state.StateDB, header *
 // 1-->500000---》0.3858
 func getBlockReward(header *types.Header) *big.Int {
 	headerNumber := header.Number.Int64()
-	if (headerNumber >= 0) && (headerNumber < params.BlockCountInEightMonth) {
-		return new(big.Int).Mul(firstLastYear, big.NewInt(1e8))
-	} else if (headerNumber >= params.BlockCountInEightMonth) && (headerNumber < params.BlockCountInTwelveMonth) {
-		return new(big.Int).Mul(secondLastYear, big.NewInt(1e8))
+	var BlockCountInEightMonth int64 = 10368000
+	var BlockCountInTwelveMonth int64 = 15552000
+
+	if isV1Forked(titV1BlockNumber, header.Number) {
+		if (headerNumber >= 0) && (headerNumber < BlockCountInEightMonth) {
+			return new(big.Int).Mul(firstLastYear, big.NewInt(1e8))
+		} else if (headerNumber >= BlockCountInEightMonth) && (headerNumber < BlockCountInTwelveMonth) {
+			return new(big.Int).Mul(secondLastYear, big.NewInt(1e8))
+		}
+	} else {
+		if (headerNumber >= 0) && (headerNumber < params.BlockCountInEightMonth) {
+			return new(big.Int).Mul(firstLastYear, big.NewInt(1e8))
+		} else if (headerNumber >= params.BlockCountInEightMonth) && (headerNumber < params.BlockCountInTwelveMonth) {
+			return new(big.Int).Mul(secondLastYear, big.NewInt(1e8))
+		}
 	}
 	// the forth year ,decrease by half
 	return new(big.Int).Mul(baseLastYear, big.NewInt(1e8))
+}
 
+// isForked returns whether a fork scheduled at block s is active at the given head block.
+func isV1Forked(s, head *big.Int) bool {
+	if s == nil || head == nil {
+		return false
+	}
+	return s.Cmp(head) <= 0
 }
 
 // Finalize implements consensus.Engine, accumulating the block and uncle rewards,
@@ -530,7 +550,7 @@ func (d *Devote) CheckWitness(lastBlock *types.Block, now int64) error {
 	}
 	log.Info("devote checkWitness lookup", " witness", witness, "signer", d.signer, "cycle", currentCycle, "blockNumber", lastBlock.Number())
 	for _, signer := range d.witnesses {
-		if witness == signer && snap.isGenesis(witness){
+		if witness == signer && snap.isGenesis(witness) {
 			d.signer = signer
 			logTime := time.Now().Format("[2006-01-02 15:04:05]")
 			fmt.Printf("%s [CheckWitness] Found my witness(%s)\n", logTime, witness)
